@@ -1,177 +1,210 @@
-#!/bin/sh
+#!/bin/bash
+
+# Enhanced dotfiles installation script
+# This script creates symbolic links for all configuration files
+
+set -e  # Exit on any error
+
 path=$(pwd)
+echo "Installing dotfiles from: $path"
 
-# Home directory
-ln -sf $path/.bash_profile $HOME/.bash_profile
-ln -sf $path/.bashrc $HOME/.bashrc
-ln -sf $path/.gitconfig $HOME/.gitconfig
-ln -sf $path/.imwheelrc $HOME/.imwheelrc
-ln -sf $path/.profile $HOME/.profile
-ln -sf $path/config/nvim/init.vim $HOME/.vimrc
-ln -sf $path/.Xresources $HOME/.Xresources
-ln -sf $path/.xinitrc $HOME/.xinitrc
-ln -sf $path/.Xmodmap $HOME/.Xmodmap
-ln -sf $path/.zcompdump $HOME/.zcompdump
-ln -sf $path/.zprofile $HOME/.zprofile
-ln -sf $path/.zshenv $HOME/.zshenv
-ln -sf $path/.zshrc $HOME/.zshrc
+# Function to create symbolic link with backup
+create_link() {
+    local src="$1"
+    local dest="$2"
+    
+    # Create parent directory if it doesn't exist
+    mkdir -p "$(dirname "$dest")"
+    
+    # Backup existing file/directory if it exists and isn't a symlink
+    if [ -e "$dest" ] && [ ! -L "$dest" ]; then
+        echo "Backing up existing $dest to ${dest}.backup"
+        mv "$dest" "${dest}.backup"
+    fi
+    
+    # Remove existing symlink if present
+    [ -L "$dest" ] && rm "$dest"
+    
+    # Create the symbolic link
+    ln -sf "$src" "$dest"
+    echo "Linked: $src -> $dest"
+}
 
-# Config directory
-[ ! -d $HOME/.config ] && mkdir $HOME/.config
+# Function to create directory if it doesn't exist
+ensure_dir() {
+    [ ! -d "$1" ] && mkdir -p "$1"
+}
 
-[ ! -d $HOME/.config/GIMP ] && mkdir -p $HOME/.config/GIMP/2.10
-[ ! -d $HOME/.config/GIMP/2.10 ] && mkdir $HOME/.config/GIMP/2.10
-ln -sf $path/config/GIMP/filters $HOME/.config/GIMP/2.10/filters
-ln -sf $path/config/GIMP/patterns $HOME/.config/GIMP/2.10/patterns
+echo "=== Installing Home Directory Dotfiles ==="
 
-[ ! -d $HOME/.config/joplin ] && mkdir $HOME/.config/joplin
-ln -sf $path/config/joplin/keymap.json $HOME/.config/joplin/keymap.json
+# Home directory configuration files
+create_link "$path/.bash_profile" "$HOME/.bash_profile"
+create_link "$path/.bashrc" "$HOME/.bashrc"
+create_link "$path/.gitconfig" "$HOME/.gitconfig"
+create_link "$path/.imwheelrc" "$HOME/.imwheelrc"
+create_link "$path/.profile" "$HOME/.profile"
+create_link "$path/config/nvim/init.vim" "$HOME/.vimrc"
+create_link "$path/.Xresources" "$HOME/.Xresources"
+create_link "$path/.xinitrc" "$HOME/.xinitrc"
+create_link "$path/.Xmodmap" "$HOME/.Xmodmap"
+create_link "$path/.zcompdump" "$HOME/.zcompdump"
+create_link "$path/.zprofile" "$HOME/.zprofile"
+create_link "$path/.zshenv" "$HOME/.zshenv"
+create_link "$path/.zshrc" "$HOME/.zshrc"
 
-[ ! -d $HOME/.config/nnn ] && mkdir $HOME/.config/nnn
-ln -sf $path/config/nnn/plugins $HOME/.config/nnn/plugins
+echo "=== Installing Config Directory Files ==="
 
-[ ! -d $HOME/.config/obs-studio ] && mkdir $HOME/.config/obs-studio
-ln -sf $path/config/obs-studio/basic $HOME/.config/obs-studio/basic
+# Ensure .config directory exists
+ensure_dir "$HOME/.config"
 
-[ ! -d $HOME/.config/transmission-daemon ] && mkdir $HOME/.config/transmission-daemon
-ln -sf $path/config/transmission-daemon/settings.json $HOME/.config/transmission-daemon/settings.json
+# GIMP configuration
+ensure_dir "$HOME/.config/GIMP/2.10"
+create_link "$path/config/GIMP/filters" "$HOME/.config/GIMP/2.10/filters"
+create_link "$path/config/GIMP/patterns" "$HOME/.config/GIMP/2.10/patterns"
 
-[ ! -d $HOME/.config/VSCodium ] && mkdir -p $HOME/.config/VSCodium/User
-[ ! -d $HOME/.config/VSCodium/User ] && mkdir $HOME/.config/VSCodium/User
-ln -sf $path/config/VSCodium/keybindings.json $HOME/.config/VSCodium/User/keybindings.json
-ln -sf $path/config/VSCodium/settings.json $HOME/.config/VSCodium/User/settings.json
+# Individual config files in subdirectories
+ensure_dir "$HOME/.config/joplin"
+create_link "$path/config/joplin/keymap.json" "$HOME/.config/joplin/keymap.json"
 
-[ -d $HOME/.config/alacritty ] && rm -rf $HOME/.config/alacritty
-ln -sf $path/config/alacritty $HOME/.config/alacritty
+ensure_dir "$HOME/.config/nnn"
+create_link "$path/config/nnn/plugins" "$HOME/.config/nnn/plugins"
 
-[ -d $HOME/.config/bookmenu ] && rm -rf $HOME/.config/bookmenu
-ln -sf $path/config/blender $HOME/.config/blender
+ensure_dir "$HOME/.config/obs-studio"
+create_link "$path/config/obs-studio/basic" "$HOME/.config/obs-studio/basic"
 
-[ -d $HOME/.config/bookmenu ] && rm -rf $HOME/.config/bookmenu
-ln -sf $path/config/bookmenu $HOME/.config/bookmenu
+ensure_dir "$HOME/.config/transmission-daemon"
+create_link "$path/config/transmission-daemon/settings.json" "$HOME/.config/transmission-daemon/settings.json"
 
-[ -d $HOME/.config/broot ] && rm -rf $HOME/.config/broot
-ln -sf $path/config/broot $HOME/.config/broot
+ensure_dir "$HOME/.config/VSCodium/User"
+create_link "$path/config/VSCodium/keybindings.json" "$HOME/.config/VSCodium/User/keybindings.json"
+create_link "$path/config/VSCodium/settings.json" "$HOME/.config/VSCodium/User/settings.json"
 
-[ -d $HOME/.config/bspwm ] && rm -rf $HOME/.config/bspwm
-ln -sf $path/config/bspwm $HOME/.config/bspwm
+# Full directory symlinks (remove existing directories first)
+config_dirs=(
+    "alacritty"
+    "blender"
+    "bookmenu"
+    "broot"
+    "bspwm"
+    "btops"
+    ".calcurse"
+    "cfiles"
+    "deadd"
+    "Dharkael"
+    "dunst"
+    "gtk-2.0"
+    "gtk-3.0"
+    "hunter"
+    "i3"
+    "i3blocks"
+    "import"
+    "kitty"
+    "lf"
+    "mpv"
+    "neofetch"
+    "newsboat"
+    "nvim"
+    "pcmanfm"
+    "pistol"
+    "polybar"
+    "powerline-shell"
+    "ranger"
+    "search"
+    "shellconfig"
+    "sxhkd"
+    "tabdmenu"
+    "transmission-rfss"
+    "twmn"
+    "vifm"
+)
 
-[ -d $HOME/.config/btops ] && rm -rf $HOME/.config/btops
-ln -sf $path/config/btops $HOME/.config/btops
+for dir in "${config_dirs[@]}"; do
+    if [ -d "$path/config/$dir" ]; then
+        create_link "$path/config/$dir" "$HOME/.config/$dir"
+    else
+        echo "Warning: $path/config/$dir does not exist, skipping..."
+    fi
+done
 
-[ -d $HOME/.config/.calcurse ] && rm -rf $HOME/.config/.calcurse
-ln -sf $path/config/.calcurse $HOME/.config/.calcurse
+# Individual config files in .config root
+config_files=(
+    "compton.conf"
+    "dolphinrc"
+    "kdeglobals"
+    "kdenliverc"
+    "kiorc"
+    "kservicemenurc"
+    "ktrashrc"
+    "mimeapps.list"
+    "pavucontrol.ini"
+    "starship.toml"
+    "user-dirs.dirs"
+    "wall.png"
+)
 
-[ -d $HOME/.config/cfiles ] && rm -rf $HOME/.config/cfiles
-ln -sf $path/config/cfiles $HOME/.config/cfiles
+for file in "${config_files[@]}"; do
+    if [ -f "$path/config/$file" ]; then
+        create_link "$path/config/$file" "$HOME/.config/$file"
+    else
+        echo "Warning: $path/config/$file does not exist, skipping..."
+    fi
+done
 
-[ -d $HOME/.config/deadd ] && rm -rf $HOME/.config/deadd
-ln -sf $path/config/deadd $HOME/.config/deadd
+echo "=== Installing Local Directory Files ==="
 
-[ -d $HOME/.config/Dharkael ] && rm -rf $HOME/.config/Dharkael
-ln -sf $path/config/Dharkael $HOME/.config/Dharkael
+# Local directory setup
+ensure_dir "$HOME/.local/share"
 
-[ -d $HOME/.config/dunst ] && rm -rf $HOME/.config/dunst
-ln -sf $path/config/dunst $HOME/.config/dunst
+if [ -d "$path/.local/share/applications" ]; then
+    create_link "$path/.local/share/applications" "$HOME/.local/share/applications"
+fi
 
-[ -d $HOME/.config/gtk-2.0 ] && rm -rf $HOME/.config/gtk-2.0
-ln -sf $path/config/gtk-2.0 $HOME/.config/gtk-2.0
+if [ -d "$path/.local/share/fonts" ]; then
+    create_link "$path/.local/share/fonts" "$HOME/.local/share/fonts"
+    # Refresh font cache
+    if command -v fc-cache >/dev/null 2>&1; then
+        echo "Refreshing font cache..."
+        fc-cache -fv
+    fi
+fi
 
-[ -d $HOME/.config/gtk-3.0 ] && rm -rf $HOME/.config/gtk-3.0
-ln -sf $path/config/gtk-3.0 $HOME/.config/gtk-3.0
+echo "=== Installing System-wide Cron Configuration ==="
 
-[ -d $HOME/.config/hunter ] && rm -rf $HOME/.config/hunter
-ln -sf $path/config/hunter $HOME/.config/hunter
+# System cron directory (requires sudo)
+if [ -d "$path/cron" ]; then
+    echo "Setting up system cron configuration (requires sudo)..."
+    sudo mkdir -p /var/spool
+    if [ -d /var/spool/cron ]; then
+        sudo rm -rf /var/spool/cron
+    fi
+    sudo ln -sf "$path/cron" /var/spool/cron
+    echo "Cron configuration linked successfully"
+else
+    echo "Warning: $path/cron directory not found, skipping system cron setup"
+fi
 
-[ -d $HOME/.config/i3 ] && rm -rf $HOME/.config/i3
-ln -sf $path/config/i3 $HOME/.config/i3
+echo "=== Post-installation Steps ==="
 
-[ -d $HOME/.config/i3blocks ] && rm -rf $HOME/.config/i3blocks
-ln -sf $path/config/i3blocks $HOME/.config/i3blocks
+# Source shell configurations if they exist
+if [ -f "$HOME/.bashrc" ]; then
+    echo "To reload bash configuration, run: source ~/.bashrc"
+fi
 
-[ -d $HOME/.config/import ] && rm -rf $HOME/.config/import
-ln -sf $path/config/import $HOME/.config/import
+if [ -f "$HOME/.zshrc" ]; then
+    echo "To reload zsh configuration, run: source ~/.zshrc"
+fi
 
-[ -d $HOME/.config/kitty ] && rm -rf $HOME/.config/kitty
-ln -sf $path/config/kitty $HOME/.config/kitty
+# Reload X resources if in X session
+if [ -n "$DISPLAY" ] && command -v xrdb >/dev/null 2>&1; then
+    echo "Reloading X resources..."
+    xrdb -merge ~/.Xresources
+fi
 
-[ -d $HOME/.config/lf ] && rm -rf $HOME/.config/lf
-ln -sf $path/config/lf $HOME/.config/lf
-
-[ -d $HOME/.config/mpv ] && rm -rf $HOME/.config/mpv
-ln -sf $path/config/mpv $HOME/.config/mpv
-
-[ -d $HOME/.config/neofetch ] && rm -rf $HOME/.config/neofetch
-ln -sf $path/config/neofetch $HOME/.config/neofetch
-
-[ -d $HOME/.config/newsboat ] && rm -rf $HOME/.config/newsboat
-ln -sf $path/config/newsboat $HOME/.config/newsboat
-
-[ -d $HOME/.config/broot ] && rm -rf $HOME/.config/broot
-ln -sf $path/config/broot $HOME/.config/broot
-
-[ -d $HOME/.config/nvim ] && rm -rf $HOME/.config/nvim
-ln -sf $path/config/nvim $HOME/.config/nvim
-
-[ -d $HOME/.config/pcmanfm ] && rm -rf $HOME/.config/pcmanfm
-ln -sf $path/config/pcmanfm $HOME/.config/pcmanfm
-
-[ -d $HOME/.config/pistol ] && rm -rf $HOME/.config/pistol
-ln -sf $path/config/pistol $HOME/.config/pistol
-
-[ -d $HOME/.config/polybar ] && rm -rf $HOME/.config/polybar
-ln -sf $path/config/polybar $HOME/.config/polybar
-
-[ -d $HOME/.config/powerline-shell ] && rm -rf $HOME/.config/powerline-shell
-ln -sf $path/config/powerline-shell $HOME/.config/powerline-shell
-
-[ -d $HOME/.config/ranger ] && rm -rf $HOME/.config/ranger
-ln -sf $path/config/ranger $HOME/.config/ranger
-
-[ -d $HOME/.config/search ] && rm -rf $HOME/.config/search
-ln -sf $path/config/search $HOME/.config/search
-
-[ -d $HOME/.config/shellconfig ] && rm -rf $HOME/.config/shellconfig
-ln -sf $path/config/shellconfig $HOME/.config/shellconfig
-
-[ -d $HOME/.config/sxhkd ] && rm -rf $HOME/.config/sxhkd
-ln -sf $path/config/sxhkd $HOME/.config/sxhkd
-
-[ -d $HOME/.config/tabdmenu ] && rm -rf $HOME/.config/tabdmenu
-ln -sf $path/config/tabdmenu $HOME/.config/tabdmenu
-
-[ -d $HOME/.config/transmission-rfss ] && rm -rf $HOME/.config/transmission-rfss
-ln -sf $path/config/transmission-rfss $HOME/.config/transmission-rfss
-
-[ -d $HOME/.config/twmn ] && rm -rf $HOME/.config/twmn
-ln -sf $path/config/twmn $HOME/.config/twmn
-
-[ -d $HOME/.config/vifm ] && rm -rf $HOME/.config/vifm
-ln -sf $path/config/vifm $HOME/.config/vifm
-
-ln -sf $path/config/compton.conf $HOME/.config/compton.conf
-ln -sf $path/config/dolphinrc $HOME/.config/dolphinrc
-ln -sf $path/config/kdeglobals $HOME/.config/kdeglobals
-ln -sf $path/config/kdenliverc $HOME/.config/kdenliverc
-ln -sf $path/config/kiorc $HOME/.config/kiorc
-ln -sf $path/config/kservicemenurc $HOME/.config/kservicemenurc
-ln -sf $path/config/ktrashrc $HOME/.config/ktrashrc
-ln -sf $path/config/mimeapps.list $HOME/.config/mimeapps.list
-ln -sf $path/config/pavucontrol.ini $HOME/.config/pavucontrol.ini
-ln -sf $path/config/starship.toml $HOME/.config/starship.toml
-ln -sf $path/config/user-dirs.dirs $HOME/.config/user-dirs.dirs
-ln -sf $path/config/wall.png $HOME/.config/wall.png
-
-# Local directory
-[ ! -d $HOME/.local ] && mkdir -p $HOME/.local/share
-[ ! -d $HOME/.local/share ] && mkdir $HOME/.local/share
-[ -d $HOME/.local/share/applications ] && rm -rf $HOME/.local/share/applications
-ln -sf $path/.local/share/applications $HOME/.local/share/applications
-[ -d $HOME/.local/share/fonts ] && rm -r $HOME/.local/share/fonts
-ln -sf $path/.local/share/fonts $HOME/.local/share/fonts
-
-# Var Directory
-[ ! -d /var ] && sudo mkdir -p /var/spool/cron
-[ ! -d /var/spool ] && sudo mkdir -p /var/spool/cron
-[ -d /var/spool/cron ] && rm -rf /var/spool/cron
-sudo ln -sf $path/cron /var/spool/cron
+echo "=== Installation Complete ==="
+echo "All dotfiles have been successfully installed!"
+echo "Backup files (if any) are saved with .backup extension"
+echo ""
+echo "Next steps:"
+echo "1. Restart your terminal or source your shell configuration"
+echo "2. Log out and log back in to apply X11 configurations"
+echo "3. Restart any applications that use the updated configurations"
